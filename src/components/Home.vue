@@ -11,8 +11,18 @@
     <!-- 头部e -->
     <el-container>
       <!-- 侧边栏s -->
-      <el-aside width="200px">
-        <el-menu background-color="#545c64" text-color="#fff" active-text-color="#409EFF">
+      <el-aside :width="isCollapse?'64px':'200px'">
+        <el-menu
+          background-color="#545c64"
+          text-color="#fff"
+          active-text-color="cyan"
+          :unique-opened="true"
+          :collapse="isCollapse"
+          :collapse-transition="false"
+          router
+          :default-active="defaultAction"
+        >
+          <div class="foldBtn" @click="toFoldBtn">|||</div>
           <el-submenu :index="item.id+''" v-for="item in menuList" :key="item.id">
             <!-- 一级侧边栏模板 -->
             <template slot="title">
@@ -21,7 +31,12 @@
             </template>
 
             <!-- 二级侧边栏 -->
-            <el-menu-item :index="item2.id+''" v-for="item2 in item.children" :key="item2.id">
+            <el-menu-item
+              :index="'/'+item2.path"
+              v-for="item2 in item.children"
+              :key="item2.id"
+              @click="setSessionStorage('/'+item2.path)"
+            >
               <template slot="title">
                 <i class="el-icon-menu"></i>
                 <span>{{item2.authName}}</span>
@@ -32,7 +47,10 @@
       </el-aside>
       <!-- 侧边栏e -->
       <!-- 主体区域s -->
-      <el-main>Main</el-main>
+      <el-main>
+        <!-- 欢迎界面 -->
+        <router-view></router-view>
+      </el-main>
       <!-- 主体区域e -->
     </el-container>
   </el-container>
@@ -50,12 +68,15 @@ export default {
         '101': 'iconfont icon-shangpin',
         '102': 'iconfont icon-danju',
         '145': 'iconfont icon-baobiao'
-      }
+      },
+      // 控制侧边栏是否折叠
+      isCollapse: false,
+      defaultAction: ''
     }
   },
 
   methods: {
-    // 推出后台主页
+    // 退出后台主页
     exitHome() {
       this.$router.push('/login')
       sessionStorage.removeItem('token')
@@ -65,13 +86,21 @@ export default {
       const { data: res } = await this.axios.get('menus')
       if (res.meta.status !== 200) return this.$message.error('数据请求失败')
       this.$message.success('数据请求成功')
-      console.log(res.data)
+      // console.log(res.data)
       this.menuList = res.data
+    },
+    toFoldBtn() {
+      this.isCollapse = !this.isCollapse
+    },
+    setSessionStorage(path) {
+      sessionStorage.setItem('defaultAction', path)
+      this.defaultAction = path
     }
   },
 
   created() {
     this.getAsideMenu()
+    this.defaultAction = sessionStorage.getItem('defaultAction')
   }
 }
 </script>
@@ -82,12 +111,25 @@ export default {
 }
 .el-container {
   height: 100%;
+  .el-menu {
+    border: 0;
+  }
 }
 .el-header {
   display: flex;
   background-color: #2b4b6b;
   justify-content: space-between;
   align-items: center;
+  vertical-align: middle;
+  img {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 15px;
+  }
+  span {
+    font-size: 18px;
+    color: #ccc;
+  }
 }
 .el-aside {
   height: 100%;
@@ -99,5 +141,12 @@ export default {
 }
 .iconfont {
   margin-right: 10px;
+}
+.foldBtn {
+  width: 100%;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  color: #fff;
 }
 </style>
